@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Домашній Фітнес Рулетка — крути колесо та отримай легку вправу для дому! Тренуйся граючи.">
+    <meta name="theme-color" content="#6c5ce7">
+    <link rel="manifest" href="manifest.json">
+    <title>🏠 Фітнес Рулетка — Тренуйся вдома граючи!</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Animated background particles -->
+    <div class="bg-particles" id="bgParticles"></div>
+
+    <!-- Glow orbs -->
+    <div class="glow-orb glow-orb-1"></div>
+    <div class="glow-orb glow-orb-2"></div>
+    <div class="glow-orb glow-orb-3"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🏠</span>
+                <h1>Фітнес Рулетка</h1>
+            </div>
+            <div class="header-actions">
+                <div class="auth-box" id="authBox">
+                    <button class="auth-btn" id="loginBtn" title="Синхронізація прогресу в хмару та YouTube плейлисти">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
+                            <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+                            <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9z"/>
+                            <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 6.3 10.1 6.3z"/>
+                        </svg>
+                        <span>Увійти через Google</span>
+                    </button>
+                    <div class="user-profile" id="userProfile" style="display: none;">
+                        <img class="user-avatar" id="userAvatar" src="" alt="Avatar">
+                        <span class="user-name" id="userName">Користувач</span>
+                        <span class="cloud-badge" id="cloudStatus" title="Синхронізовано з Firebase">☁️</span>
+                        <button class="logout-btn" id="logoutBtn" title="Вийти">🚪</button>
+                    </div>
+                </div>
+            </div>
+            <p class="subtitle">Пограв — покрутив — потренувався!</p>
+        </header>
+
+        <!-- Session Stats Bar -->
+        <div class="session-bar" id="sessionBar">
+            <div class="stat-chip">
+                <span class="stat-icon">🌟</span>
+                <span class="stat-label">Ранг</span>
+                <span class="stat-value" id="rankDisplay">Новачок</span>
+            </div>
+            <div class="stat-chip">
+                <span class="stat-icon">📈</span>
+                <span class="stat-label">XP</span>
+                <span class="stat-value" id="xpDisplay">0</span>
+            </div>
+            <div class="stat-chip">
+                <span class="stat-icon">⏱️</span>
+                <span class="stat-label">Сесія</span>
+                <span class="stat-value" id="sessionTime">00:00</span>
+            </div>
+            <div class="stat-chip">
+                <span class="stat-icon">🔥</span>
+                <span class="stat-label">Вправ</span>
+                <span class="stat-value" id="exerciseCount">0</span>
+            </div>
+            <div class="stat-chip">
+                <span class="stat-icon">⚡</span>
+                <span class="stat-label">Серія</span>
+                <span class="stat-value" id="streakCount">0</span>
+            </div>
+            <div class="stat-chip energy-chip">
+                <span class="stat-icon">💪</span>
+                <span class="stat-label">Енергія</span>
+                <div class="energy-bar-wrap">
+                    <div class="energy-bar" id="energyBar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Wheel Section -->
+            <div class="wheel-section">
+                <div class="wheel-container">
+                    <div class="wheel-glow-ring"></div>
+
+                    <!-- Pointer -->
+                    <div class="wheel-pointer">
+                        <svg viewBox="0 0 40 50" fill="none">
+                            <path d="M20 50 L0 10 Q0 0 10 0 L30 0 Q40 0 40 10 Z" fill="url(#pointerGrad)"/>
+                            <defs>
+                                <linearGradient id="pointerGrad" x1="20" y1="0" x2="20" y2="50">
+                                    <stop offset="0%" stop-color="#FFD700"/>
+                                    <stop offset="100%" stop-color="#FF8C00"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+
+                    <canvas id="wheelCanvas" width="500" height="500"></canvas>
+
+                    <button class="spin-center-btn" id="spinCenterBtn" title="Крутити!">
+                        <span class="spin-icon">▶</span>
+                    </button>
+
+                    <div class="led-ring" id="ledRing"></div>
+                </div>
+
+                <button class="spin-btn" id="spinBtn">
+                    <span class="spin-btn-text">🎰 КРУТИТИ!</span>
+                    <span class="spin-btn-glow"></span>
+                </button>
+            </div>
+
+            <!-- Right Column -->
+            <div class="right-column">
+                <!-- Exercise Result Card -->
+                <div class="result-section" id="resultSection">
+                    <div class="result-card" id="resultCard">
+                        <div class="result-emoji" id="resultEmoji">💪</div>
+                        <h2 class="result-title" id="resultTitle">Твоя вправа</h2>
+                        <p class="result-description" id="resultDescription">Крутни колесо — отримай легку вправу!</p>
+                        <div class="result-details" id="resultDetails"></div>
+
+                        <!-- Exercise instruction -->
+                        <div class="exercise-instruction" id="exerciseInstruction" style="display:none">
+                            <h4>📋 Як виконувати:</h4>
+                            <ol id="instructionSteps"></ol>
+                        </div>
+
+                        <!-- Exercise Timer -->
+                        <div class="exercise-timer" id="exerciseTimer" style="display:none">
+                            <div class="timer-display" id="timerDisplay">00:30</div>
+                            <div class="timer-progress-ring">
+                                <svg viewBox="0 0 120 120" id="timerSvg">
+                                    <circle cx="60" cy="60" r="54" class="timer-bg-circle"/>
+                                    <circle cx="60" cy="60" r="54" class="timer-fg-circle" id="timerCircle"
+                                        stroke-dasharray="339.292" stroke-dashoffset="0"/>
+                                </svg>
+                            </div>
+                            <div class="timer-controls">
+                                <button class="timer-btn timer-start" id="timerStartBtn">▶ Почати</button>
+                                <button class="timer-btn timer-done" id="timerDoneBtn" style="display:none">✅ Готово!</button>
+                                <button class="timer-btn timer-skip" id="timerSkipBtn">⏭️ Пропустити</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workout History -->
+                <div class="history-section" id="historySection">
+                    <div class="history-header">
+                        <h3 class="history-title">📜 Останні вправи</h3>
+                        <button class="icon-btn" id="showStatsBtn" title="Статистика">📊</button>
+                    </div>
+                    <div class="history-list" id="historyList">
+                        <p class="history-empty">Поки що пусто... Крутни колесо!</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Settings Panel -->
+        <div class="settings-toggle" id="settingsToggle">⚙️</div>
+        <div class="settings-panel" id="settingsPanel">
+            <h3>⚙️ Налаштування</h3>
+            <div class="setting-group">
+                <label>Група м'язів:</label>
+                <select id="categorySelect">
+                    <option value="all">🌍 Всі вправи</option>
+                    <option value="upper">💪 Верх тіла</option>
+                    <option value="lower">🦵 Ноги</option>
+                    <option value="core">🧱 Прес / Кор</option>
+                    <option value="cardio">❤️ Кардіо</option>
+                    <option value="stretch">🧘 Розтяжка</option>
+                    <option value="full">🏋️ Все тіло</option>
+                </select>
+            </div>
+            <div class="setting-group">
+                <label>Складність:</label>
+                <select id="difficultySelect">
+                    <option value="easy" selected>😊 Легко</option>
+                    <option value="medium">💪 Середньо</option>
+                    <option value="hard">🔥 Важко</option>
+                </select>
+            </div>
+            <div class="setting-group">
+                <label>Звук:</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="soundToggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-group">
+                <label>Автотаймер:</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoTimerToggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-group">
+                <label>Світла тема:</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="themeToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="setting-group" style="margin-top: 0.5rem">
+                <label>Власна фонова музика (MP3):</label>
+                <input type="file" id="customMusicInput" accept="audio/*" style="display:none">
+                <button class="settings-btn" id="customMusicBtn" style="font-size: 0.85rem">📂 Вибрати трек (MP3)</button>
+            </div>
+            <div class="setting-group" style="margin-top: 0.5rem">
+                <label>SoundCloud Музика (Посилання):</label>
+                <div style="display: flex; gap: 0.5rem">
+                    <input type="text" id="scLinkInput" placeholder="https://soundcloud.com/..." style="flex: 1; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); color: var(--text-primary);">
+                    <button class="settings-btn" id="scApplyBtn" style="padding: 0.6rem 1rem">Встановити</button>
+                </div>
+            </div>
+            <hr class="settings-divider">
+            <button class="settings-btn accent-btn" id="addExerciseBtn">➕ Додати власну вправу</button>
+            <button class="settings-btn" id="showAchievementsBtn">🏆 Мої досягнення</button>
+            <button class="settings-btn reset-btn" id="resetSessionBtn">🗑️ Скинути весь прогрес</button>
+            <button class="settings-close" id="settingsClose">Закрити</button>
+        </div>
+
+        <!-- Custom Exercise Modal -->
+        <div class="modal-overlay" id="customExerciseModal" style="display:none">
+            <div class="modal-content">
+                <h3>➕ Нова Вправа</h3>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Назва:</label>
+                        <input type="text" id="ceName" placeholder="Напр. Стрибки з гантелями" required>
+                    </div>
+                    <div class="form-group-row">
+                        <div class="form-group">
+                            <label>Емодзі:</label>
+                            <input type="text" id="ceEmoji" placeholder="🏋️" maxlength="2" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Група м'язів:</label>
+                            <select id="ceCategory">
+                                <option value="upper">Верх тіла</option>
+                                <option value="lower">Ноги</option>
+                                <option value="core">Прес / Кор</option>
+                                <option value="cardio">Кардіо</option>
+                                <option value="stretch">Розтяжка</option>
+                                <option value="full">Все тіло</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Опис:</label>
+                        <input type="text" id="ceDesc" placeholder="Короткий опис як робити">
+                    </div>
+                    <label style="margin-top:0.5rem;display:block;font-size:0.9rem;">Повторення (або час):</label>
+                    <div class="form-group-row">
+                        <div class="form-group">
+                            <label>Легко:</label>
+                            <input type="text" id="ceRepsEasy" placeholder="10 разів або 30 сек">
+                        </div>
+                        <div class="form-group">
+                            <label>Середньо:</label>
+                            <input type="text" id="ceRepsMedium" placeholder="20 разів або 1 хв">
+                        </div>
+                        <div class="form-group">
+                            <label>Важко:</label>
+                            <input type="text" id="ceRepsHard" placeholder="30 разів або 2 хв">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel-btn" id="ceCancelBtn">Скасувати</button>
+                    <button class="modal-btn save-btn" id="ceSaveBtn">Зберегти</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Achievements Modal -->
+        <div class="modal-overlay" id="achievementsModal" style="display:none">
+            <div class="modal-content achievements-content">
+                <h3>🏆 Мої Досягнення</h3>
+                <div class="achievements-grid" id="achievementsGrid">
+                    <!-- Dynamic badges here -->
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel-btn" id="achievementsCloseBtn">Закрити</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Modal -->
+        <div class="modal-overlay" id="statsModal" style="display:none">
+            <div class="modal-content stats-content">
+                <h3>📊 Активність за тиждень</h3>
+                <div class="chart-container" style="position: relative; height:40vh; width:100%">
+                    <canvas id="activityChart"></canvas>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel-btn" id="statsCloseBtn">Закрити</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notifications Container -->
+        <div class="toast-container" id="toastContainer"></div>
+
+    </div>
+
+    <!-- Audio Player (MP3 fallback) -->
+    <audio id="bgMusic" loop></audio>
+
+    <!-- Music Floating Player -->
+    <div class="sc-player-float" id="scPlayerBar">
+        <div class="sc-player-float-header" id="scPlayerToggle">
+            <span>🎵</span>
+            <span class="sc-player-float-label">Музика</span>
+        </div>
+        <div class="sc-player-float-body" id="scPlayerBody">
+            <!-- Source Tabs -->
+            <div class="music-source-tabs">
+                <button class="source-tab active" data-source="yt">▶ YouTube</button>
+                <button class="source-tab" data-source="sc">☁ SoundCloud</button>
+                <button class="source-tab" data-source="mp3">📂 MP3</button>
+            </div>
+
+            <!-- YouTube Playlists -->
+            <div class="music-playlists" id="ytPlaylistsPanel">
+                <button class="playlist-chip" data-yt-id="PLgzTt0k8mXzEk586SfEBRW0VisiKznOlR">🏋️ Workout</button>
+                <button class="playlist-chip" data-yt-id="PLw-VjHDlEOgs658kAHR_LAaILBXb-s6Q5">🎧 EDM</button>
+                <button class="playlist-chip" data-yt-id="PLMC9KNkIncKtPzgY-5rmhvj7fax8fdxoj">🏃 Біг</button>
+                <button class="playlist-chip" data-yt-id="PLRqwX7zYAm1YBMudl_CkqoheRBikHaGkj">💪 Hip-Hop</button>
+            </div>
+
+            <!-- Personal User Playlists (from Google/YouTube account) -->
+            <div class="user-playlists-section" id="userPlaylistsSection" style="display:none">
+                <div class="user-playlists-header">
+                    <span>👤 Мої плейлисти:</span>
+                    <button class="user-playlists-refresh" id="refreshPlaylistsBtn" title="Оновити плейлисти">🔄</button>
+                </div>
+                <div class="user-playlists-list" id="userPlaylistsList"></div>
+            </div>
+
+            <!-- Custom URL -->
+            <div class="music-url-row" id="musicUrlRow">
+                <input type="text" id="musicUrlInput" placeholder="Вставте YouTube або SoundCloud посилання...">
+                <button id="musicUrlApply" title="Застосувати">OK</button>
+            </div>
+
+            <!-- MP3 Panel (hidden by default) -->
+            <div class="music-mp3-panel" id="mp3Panel" style="display:none">
+                <button class="playlist-chip" id="mp3PickBtn">📂 Вибрати MP3 файл</button>
+                <span class="mp3-filename" id="mp3Filename"></span>
+            </div>
+
+            <!-- Player Info -->
+            <div class="sc-player-info">
+                <div class="sc-player-artwork" id="scArtwork">🎵</div>
+                <div class="sc-player-text">
+                    <div class="sc-player-title" id="scTitle">Оберіть плейлист ☝️</div>
+                    <div class="sc-player-artist" id="scArtist">YouTube Music</div>
+                </div>
+            </div>
+            <div class="sc-player-controls">
+                <button class="sc-btn" id="scPrevBtn" title="Попередній">⏮</button>
+                <button class="sc-btn sc-btn-play" id="musicToggleBtn" title="Play/Pause">▶</button>
+                <button class="sc-btn" id="scNextBtn" title="Наступний">⏭</button>
+                <input type="range" id="volumeSlider" min="0" max="100" value="70" class="volume-slider" title="Гучність">
+            </div>
+            <div class="sc-player-progress">
+                <div class="sc-player-progress-bar" id="scProgressBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Players (YouTube + SoundCloud) -->
+    <div style="position: fixed; top: -9999px; left: -9999px; width: 200px; height: 200px; opacity: 0.01; pointer-events: none;">
+        <div id="yt-player"></div>
+        <iframe id="sc-player" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/playlists/874384918&amp;auto_play=false&amp;hide_related=true&amp;show_comments=false&amp;show_user=false&amp;show_reposts=false&amp;visual=false"></iframe>
+    </div>
+
+    <!-- Confetti canvas -->
+    <canvas id="confettiCanvas"></canvas>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="https://w.soundcloud.com/player/api.js" type="text/javascript"></script>
+    <!-- Google Firebase SDK (Compat) & Config -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => {
+                    console.log('SW registration failed: ', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
