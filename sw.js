@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fitness-roulette-v4';
+const CACHE_NAME = 'fitness-roulette-v5';
 const ASSETS = [
     './',
     './index.html',

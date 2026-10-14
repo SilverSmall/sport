@@ -171,6 +171,13 @@ const volumeSlider = document.getElementById('volumeSlider');
 const sourceTabs = document.querySelectorAll('.source-tab');
 const playlistChips = document.querySelectorAll('.playlist-chip[data-yt-id]');
 
+// Playlist Tracks Selection DOM Elements
+const toggleTracksBtn = document.getElementById('toggleTracksBtn');
+const playlistTracksSection = document.getElementById('playlistTracksSection');
+const playlistTracksList = document.getElementById('playlistTracksList');
+const tracksCount = document.getElementById('tracksCount');
+const closeTracksBtn = document.getElementById('closeTracksBtn');
+
 // Google Auth & Cloud Sync DOM Elements
 const loginBtn = document.getElementById('loginBtn');
 const userProfile = document.getElementById('userProfile');
@@ -191,6 +198,8 @@ let activeAudioType = 'yt'; // 'yt' or 'mp3'
 let ytPlayer = null;
 let isYtReady = false;
 let ytProgressInterval = null;
+let currentPlaylistId = 'PLgzTt0k8mXzEk586SfEBRW0VisiKznOlR';
+let currentPlaylistTracks = [];
 
 // Firebase & Cloud State
 let currentUser = null;
@@ -239,6 +248,144 @@ function setPlayerVolume(val) {
     }
 }
 
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+async function loadPlaylistTracks(playlistId) {
+    if (!playlistTracksList) return;
+    currentPlaylistId = playlistId;
+    playlistTracksList.innerHTML = '<div class="tracks-loading">⏳ Завантаження треків...</div>';
+    if (tracksCount) tracksCount.textContent = '...';
+
+    let items = [];
+    const apiKey = (window.firebaseConfig && window.firebaseConfig.apiKey) || '';
+    const token = googleAccessToken || sessionStorage.getItem('yt_access_token') || localStorage.getItem('yt_access_token');
+
+    let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=50`;
+    if (apiKey) url += `&key=${apiKey}`;
+
+    const headers = {};
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    try {
+        const res = await fetch(url, { headers });
+        const data = await res.json();
+        if (data.items && data.items.length) {
+            items = data.items.map((it, idx) => ({
+                index: idx,
+                id: it.snippet.resourceId ? it.snippet.resourceId.videoId : '',
+                title: it.snippet.title || `Трек #${idx + 1}`,
+                channel: it.snippet.videoOwnerChannelTitle || ''
+            }));
+        }
+    } catch (e) {
+        console.log('Error fetching playlist tracks via API:', e);
+    }
+
+    // Fallback: Check ytPlayer.getPlaylist()
+    if (!items.length && ytPlayer && typeof ytPlayer.getPlaylist === 'function') {
+        const pl = ytPlayer.getPlaylist();
+        if (Array.isArray(pl) && pl.length) {
+            items = pl.map((vid, idx) => ({
+                index: idx,
+                id: vid,
+                title: `Трек #${idx + 1}`,
+                channel: ''
+            }));
+        }
+    }
+
+    // Fallback preset tracks for default playlist
+    if (!items.length && playlistId === 'PLgzTt0k8mXzEk586SfEBRW0VisiKznOlR') {
+        const defaultNames = [
+            'Workout Motivation Mix - Power & Energy',
+            'Bass Boosted Training Beat',
+            'High Energy Workout Music',
+            'Cardio Motivation Track',
+            'Fitness Rhythm Beats'
+        ];
+        items = defaultNames.map((t, idx) => ({
+            index: idx,
+            id: '',
+            title: t,
+            channel: 'Gym Music'
+        }));
+    }
+
+    currentPlaylistTracks = items;
+    renderPlaylistTracks(items);
+}
+
+function renderPlaylistTracks(items) {
+    if (!playlistTracksList) return;
+    if (!items || !items.length) {
+        playlistTracksList.innerHTML = '<div class="tracks-empty">Немає треків або плейлист ще завантажується</div>';
+        if (tracksCount) tracksCount.textContent = '0';
+        return;
+    }
+
+    if (tracksCount) tracksCount.textContent = items.length;
+
+    const currentIndex = (ytPlayer && typeof ytPlayer.getPlaylistIndex === 'function')
+        ? ytPlayer.getPlaylistIndex()
+        : 0;
+
+    playlistTracksList.innerHTML = items.map((track, idx) => {
+        const isActive = idx === currentIndex;
+        return `
+            <button class="track-row ${isActive ? 'active' : ''}" data-index="${idx}" title="${escapeHtml(track.title)}">
+                <span class="track-row-num">${idx + 1}</span>
+                <span class="track-row-title">${escapeHtml(track.title)}</span>
+                <span class="track-row-status">▶</span>
+            </button>
+        `;
+    }).join('');
+
+    playlistTracksList.querySelectorAll('.track-row').forEach(row => {
+        row.addEventListener('click', () => {
+            const idx = parseInt(row.dataset.index, 10);
+            if (ytPlayer && isYtReady) {
+                ytPlayer.playVideoAt(idx);
+                musicToggleBtn.textContent = '⏸';
+                isMusicPlaying = true;
+                highlightActiveTrack(idx);
+                const title = row.querySelector('.track-row-title') ? row.querySelector('.track-row-title').textContent : '';
+                showToast('▶️', 'Трек увімкнено', title);
+            }
+        });
+    });
+
+    scrollToActiveTrack();
+}
+
+function highlightActiveTrack(activeIndex) {
+    if (!playlistTracksList) return;
+    const rows = playlistTracksList.querySelectorAll('.track-row');
+    rows.forEach((r, idx) => {
+        if (idx === activeIndex) {
+            r.classList.add('active');
+        } else {
+            r.classList.remove('active');
+        }
+    });
+    scrollToActiveTrack();
+}
+
+function scrollToActiveTrack() {
+    if (!playlistTracksList) return;
+    const activeEl = playlistTracksList.querySelector('.track-row.active');
+    if (activeEl) {
+        activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+}
+
 function updateYtTrackInfo() {
     if (!ytPlayer || !isYtReady) return;
     try {
@@ -250,6 +397,19 @@ function updateYtTrackInfo() {
                 scArtwork.innerHTML = `<img src="https://img.youtube.com/vi/${data.video_id}/hqdefault.jpg" alt="">`;
             } else {
                 scArtwork.innerHTML = '▶';
+            }
+        }
+        if (typeof ytPlayer.getPlaylistIndex === 'function') {
+            const curIdx = ytPlayer.getPlaylistIndex();
+            if (curIdx >= 0) {
+                highlightActiveTrack(curIdx);
+                if (currentPlaylistTracks[curIdx] && currentPlaylistTracks[curIdx].title.startsWith('Трек #')) {
+                    if (data && data.title) {
+                        currentPlaylistTracks[curIdx].title = data.title;
+                        const row = playlistTracksList ? playlistTracksList.querySelector(`.track-row[data-index="${curIdx}"] .track-row-title`) : null;
+                        if (row) row.textContent = data.title;
+                    }
+                }
             }
         }
     } catch (e) {
@@ -288,6 +448,7 @@ window.onYouTubeIframeAPIReady = function() {
 function initYouTubePlayer() {
     if (ytPlayer || typeof YT === 'undefined' || !YT.Player) return;
     ytPlayer = new YT.Player('yt-player', {
+        host: 'https://www.youtube-nocookie.com',
         height: '200',
         width: '200',
         playerVars: {
@@ -305,6 +466,7 @@ function initYouTubePlayer() {
                 if (volumeSlider) {
                     try { ytPlayer.setVolume(parseInt(volumeSlider.value)); } catch(e) {}
                 }
+                loadPlaylistTracks(currentPlaylistId);
                 setTimeout(updateYtTrackInfo, 1200);
             },
             'onStateChange': (event) => {
@@ -1025,6 +1187,7 @@ function renderUserPlaylists(items) {
             activeAudioType = 'yt';
             stopOtherAudio('yt');
             sourceTabs.forEach(t => t.classList.toggle('active', t.dataset.source === 'yt'));
+            loadPlaylistTracks(ytId);
 
             if (ytPlayer && isYtReady) {
                 ytPlayer.loadPlaylist({ list: ytId, listType: 'playlist' });
@@ -1333,6 +1496,34 @@ function setupEventListeners() {
         }
     });
 
+    // Toggle Playlist Tracks Drawer
+    if (toggleTracksBtn && playlistTracksSection) {
+        toggleTracksBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = playlistTracksSection.style.display === 'none' || !playlistTracksSection.style.display;
+            playlistTracksSection.style.display = isHidden ? 'block' : 'none';
+            toggleTracksBtn.classList.toggle('active', isHidden);
+            if (isHidden) {
+                if (!scPlayerBar.classList.contains('open')) {
+                    scPlayerBar.classList.add('open');
+                }
+                if (!currentPlaylistTracks.length) {
+                    loadPlaylistTracks(currentPlaylistId);
+                } else {
+                    scrollToActiveTrack();
+                }
+            }
+        });
+    }
+
+    if (closeTracksBtn && playlistTracksSection) {
+        closeTracksBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            playlistTracksSection.style.display = 'none';
+            if (toggleTracksBtn) toggleTracksBtn.classList.remove('active');
+        });
+    }
+
     // Volume Slider
     if (volumeSlider) {
         volumeSlider.addEventListener('input', (e) => {
@@ -1377,6 +1568,7 @@ function setupEventListeners() {
             if (mp3Panel) mp3Panel.style.display = 'none';
 
             const ytId = chip.dataset.ytId;
+            loadPlaylistTracks(ytId);
             if (ytPlayer && isYtReady) {
                 ytPlayer.loadPlaylist({ list: ytId, listType: 'playlist' });
                 musicToggleBtn.textContent = '⏸';
@@ -1414,9 +1606,12 @@ function setupEventListeners() {
 
             if (ytPlayer && isYtReady) {
                 if (listId) {
+                    loadPlaylistTracks(listId);
                     ytPlayer.loadPlaylist({ list: listId, listType: 'playlist' });
                     showToast('▶️', 'YouTube', 'Завантажено плейлист!');
                 } else if (videoId) {
+                    currentPlaylistTracks = [{ index: 0, id: videoId, title: 'Користувацьке відео' }];
+                    renderPlaylistTracks(currentPlaylistTracks);
                     ytPlayer.loadVideoById(videoId);
                     showToast('▶️', 'YouTube', 'Завантажено трек!');
                 } else {
@@ -1535,9 +1730,12 @@ function setupEventListeners() {
 
             if (ytPlayer && isYtReady) {
                 if (listId) {
+                    loadPlaylistTracks(listId);
                     ytPlayer.loadPlaylist({ list: listId, listType: 'playlist' });
                     showToast('▶️', 'YouTube', 'Завантажено плейлист!');
                 } else if (videoId) {
+                    currentPlaylistTracks = [{ index: 0, id: videoId, title: 'Користувацьке відео' }];
+                    renderPlaylistTracks(currentPlaylistTracks);
                     ytPlayer.loadVideoById(videoId);
                     showToast('▶️', 'YouTube', 'Завантажено трек!');
                 }

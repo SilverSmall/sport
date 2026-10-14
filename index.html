@@ -375,10 +375,22 @@
                 <button class="sc-btn" id="scPrevBtn" title="Попередній">⏮</button>
                 <button class="sc-btn sc-btn-play" id="musicToggleBtn" title="Play/Pause">▶</button>
                 <button class="sc-btn" id="scNextBtn" title="Наступний">⏭</button>
+                <button class="sc-btn" id="toggleTracksBtn" title="Список треків">📋</button>
                 <input type="range" id="volumeSlider" min="0" max="100" value="70" class="volume-slider" title="Гучність">
             </div>
             <div class="sc-player-progress">
                 <div class="sc-player-progress-bar" id="scProgressBar"></div>
+            </div>
+
+            <!-- Playlist Tracks Drawer -->
+            <div class="playlist-tracks-section" id="playlistTracksSection" style="display:none">
+                <div class="playlist-tracks-header">
+                    <span>📋 Треки в плейлисті (<span id="tracksCount">0</span>):</span>
+                    <button class="tracks-close-btn" id="closeTracksBtn">✕</button>
+                </div>
+                <div class="playlist-tracks-list" id="playlistTracksList">
+                    <div class="tracks-empty">Увімкніть плейлист, щоб побачити список треків</div>
+                </div>
             </div>
         </div>
     </div>
