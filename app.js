@@ -186,10 +186,8 @@ let isMusicPlaying = false;
 let isLightTheme = false;
 let activityChart = null;
 
-// Multi-Source Audio State
-let activeAudioType = 'yt'; // 'yt', 'sc', 'mp3'
-let scWidget = null;
-let isScReady = false;
+// Audio State
+let activeAudioType = 'yt'; // 'yt' or 'mp3'
 let ytPlayer = null;
 let isYtReady = false;
 let ytProgressInterval = null;
@@ -205,10 +203,6 @@ function playBackgroundMusic() {
         ytPlayer.playVideo();
         musicToggleBtn.textContent = '⏸';
         isMusicPlaying = true;
-    } else if (activeAudioType === 'sc' && isScReady && scWidget) {
-        scWidget.play();
-        musicToggleBtn.textContent = '⏸';
-        isMusicPlaying = true;
     } else if (activeAudioType === 'mp3' && bgMusic.src) {
         bgMusic.play().then(() => {
             musicToggleBtn.textContent = '⏸';
@@ -220,8 +214,6 @@ function playBackgroundMusic() {
 function pauseBackgroundMusic() {
     if (activeAudioType === 'yt' && ytPlayer && isYtReady) {
         ytPlayer.pauseVideo();
-    } else if (activeAudioType === 'sc' && isScReady && scWidget) {
-        scWidget.pause();
     } else if (activeAudioType === 'mp3') {
         bgMusic.pause();
     }
@@ -233,9 +225,6 @@ function stopOtherAudio(exceptType) {
     if (exceptType !== 'yt' && ytPlayer && isYtReady) {
         try { ytPlayer.pauseVideo(); } catch (e) {}
     }
-    if (exceptType !== 'sc' && scWidget && isScReady) {
-        try { scWidget.pause(); } catch (e) {}
-    }
     if (exceptType !== 'mp3' && bgMusic) {
         try { bgMusic.pause(); } catch (e) {}
     }
@@ -244,9 +233,6 @@ function stopOtherAudio(exceptType) {
 function setPlayerVolume(val) {
     if (ytPlayer && isYtReady) {
         try { ytPlayer.setVolume(val); } catch(e) {}
-    }
-    if (scWidget && isScReady) {
-        try { scWidget.setVolume(val); } catch(e) {}
     }
     if (bgMusic) {
         bgMusic.volume = val / 100;
@@ -287,21 +273,6 @@ function startYtProgress() {
 
 function stopYtProgress() {
     clearInterval(ytProgressInterval);
-}
-
-function updateScTrackInfo() {
-    if (!isScReady || !scWidget) return;
-    scWidget.getCurrentSound(function(sound) {
-        if (sound) {
-            scTitle.textContent = sound.title || 'Unknown Track';
-            scArtist.textContent = sound.user ? sound.user.username : 'SoundCloud';
-            if (sound.artwork_url) {
-                scArtwork.innerHTML = '<img src="' + sound.artwork_url.replace('-large', '-t67x67') + '" alt="">';
-            } else {
-                scArtwork.innerHTML = '☁';
-            }
-        }
-    });
 }
 
 // Exercise timer state
@@ -364,33 +335,6 @@ function init() {
     // Init YouTube if API is already loaded
     if (window.YT && window.YT.Player) {
         initYouTubePlayer();
-    }
-
-    // Init SoundCloud
-    const iframeElement = document.getElementById('sc-player');
-    if (typeof SC !== 'undefined' && iframeElement) {
-        scWidget = SC.Widget(iframeElement);
-        scWidget.bind(SC.Widget.Events.READY, function() {
-            isScReady = true;
-        });
-        scWidget.bind(SC.Widget.Events.PLAY, function() {
-            musicToggleBtn.textContent = '⏸';
-            isMusicPlaying = true;
-            updateScTrackInfo();
-        });
-        scWidget.bind(SC.Widget.Events.PAUSE, function() {
-            musicToggleBtn.textContent = '▶';
-            isMusicPlaying = false;
-        });
-        scWidget.bind(SC.Widget.Events.PLAY_PROGRESS, function(data) {
-            if (data.relativePosition && activeAudioType === 'sc') {
-                scProgressBar.style.width = (data.relativePosition * 100) + '%';
-            }
-        });
-        scWidget.bind(SC.Widget.Events.ERROR, function() {
-            console.log('SC Error');
-            showToast('❌', 'SoundCloud', 'Не вдалося завантажити трек.');
-        });
     }
     
     createParticles();
@@ -1380,16 +1324,12 @@ function setupEventListeners() {
     scPrevBtn.addEventListener('click', () => {
         if (activeAudioType === 'yt' && isYtReady && ytPlayer) {
             ytPlayer.previousVideo();
-        } else if (activeAudioType === 'sc' && isScReady && scWidget) {
-            scWidget.prev();
         }
     });
 
     scNextBtn.addEventListener('click', () => {
         if (activeAudioType === 'yt' && isYtReady && ytPlayer) {
             ytPlayer.nextVideo();
-        } else if (activeAudioType === 'sc' && isScReady && scWidget) {
-            scWidget.next();
         }
     });
 
@@ -1400,7 +1340,7 @@ function setupEventListeners() {
         });
     }
 
-    // Source Tabs (YouTube / SoundCloud / MP3)
+    // Source Tabs (YouTube / MP3)
     sourceTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             sourceTabs.forEach(t => t.classList.remove('active'));
@@ -1415,12 +1355,6 @@ function setupEventListeners() {
                 if (mp3Panel) mp3Panel.style.display = 'none';
                 if (musicUrlInput) musicUrlInput.placeholder = 'YouTube посилання (плейлист або відео)...';
                 scArtist.textContent = 'YouTube Music';
-            } else if (source === 'sc') {
-                if (ytPlaylistsPanel) ytPlaylistsPanel.style.display = 'none';
-                if (musicUrlRow) musicUrlRow.style.display = 'flex';
-                if (mp3Panel) mp3Panel.style.display = 'none';
-                if (musicUrlInput) musicUrlInput.placeholder = 'SoundCloud посилання...';
-                scArtist.textContent = 'SoundCloud';
             } else if (source === 'mp3') {
                 if (ytPlaylistsPanel) ytPlaylistsPanel.style.display = 'none';
                 if (musicUrlRow) musicUrlRow.style.display = 'none';
@@ -1454,7 +1388,7 @@ function setupEventListeners() {
         });
     });
 
-    // Custom URL handler (YouTube or SoundCloud)
+    // Custom URL handler (YouTube)
     function handleCustomUrl() {
         if (!musicUrlInput) return;
         const link = musicUrlInput.value.trim();
@@ -1493,32 +1427,8 @@ function setupEventListeners() {
             } else {
                 showToast('⏳', 'YouTube', 'Плеєр ще завантажується...');
             }
-        } else if (link.includes('soundcloud.com')) {
-            activeAudioType = 'sc';
-            stopOtherAudio('sc');
-            sourceTabs.forEach(t => t.classList.toggle('active', t.dataset.source === 'sc'));
-            if (ytPlaylistsPanel) ytPlaylistsPanel.style.display = 'none';
-            if (mp3Panel) mp3Panel.style.display = 'none';
-
-            if (isScReady && scWidget) {
-                scWidget.load(link, {
-                    auto_play: true,
-                    hide_related: true,
-                    show_comments: false,
-                    show_user: false,
-                    show_reposts: false,
-                    visual: false,
-                    callback: () => {
-                        isMusicPlaying = true;
-                        musicToggleBtn.textContent = '⏸';
-                        showToast('☁️', 'SoundCloud', 'Музику успішно підключено!');
-                    }
-                });
-            } else {
-                showToast('⚠️', 'Зачекайте', 'SoundCloud плеєр ще завантажується...');
-            }
         } else {
-            alert('Будь ласка, введіть посилання на YouTube або SoundCloud.');
+            alert('Будь ласка, введіть посилання на YouTube.');
         }
 
         musicUrlInput.value = '';
@@ -1552,10 +1462,6 @@ function setupEventListeners() {
             if (activeAudioType === 'yt' && ytPlayer && isYtReady) {
                 const dur = ytPlayer.getDuration() || 0;
                 if (dur > 0) ytPlayer.seekTo(dur * ratio, true);
-            } else if (activeAudioType === 'sc' && isScReady && scWidget) {
-                scWidget.getDuration(function(dur) {
-                    if (dur > 0) scWidget.seekTo((dur / 1000) * ratio * 1000);
-                });
             } else if (activeAudioType === 'mp3' && bgMusic.duration) {
                 bgMusic.currentTime = bgMusic.duration * ratio;
             }
@@ -1602,38 +1508,42 @@ function setupEventListeners() {
         }
     });
     
-    // Settings panel SoundCloud Link Apply
+    // Settings panel YouTube Link Apply
     if (scApplyBtn) {
         scApplyBtn.addEventListener('click', () => {
             const link = scLinkInput.value.trim();
             if (!link) return;
             
-            if (!link.includes('soundcloud.com')) {
-                alert('Будь ласка, введіть коректне посилання на SoundCloud.');
+            if (!link.includes('youtube.com') && !link.includes('youtu.be')) {
+                alert('Будь ласка, введіть коректне посилання на YouTube.');
                 return;
             }
             
-            if (!isScReady || !scWidget) {
-                showToast('⚠️', 'Зачекайте', 'SoundCloud плеєр ще завантажується...');
-                return;
-            }
+            activeAudioType = 'yt';
+            stopOtherAudio('yt');
             
-            activeAudioType = 'sc';
-            stopOtherAudio('sc');
-            
-            scWidget.load(link, {
-                auto_play: true,
-                hide_related: true,
-                show_comments: false,
-                show_user: false,
-                show_reposts: false,
-                visual: false,
-                callback: () => {
-                    isMusicPlaying = true;
-                    musicToggleBtn.textContent = '⏸';
-                    showToast('☁️', 'SoundCloud', 'Музику успішно підключено!');
+            let listId = null;
+            let videoId = null;
+            try {
+                const urlObj = new URL(link);
+                listId = urlObj.searchParams.get('list');
+                videoId = urlObj.searchParams.get('v');
+                if (!videoId && link.includes('youtu.be/')) {
+                    videoId = urlObj.pathname.slice(1);
                 }
-            });
+            } catch (e) {}
+
+            if (ytPlayer && isYtReady) {
+                if (listId) {
+                    ytPlayer.loadPlaylist({ list: listId, listType: 'playlist' });
+                    showToast('▶️', 'YouTube', 'Завантажено плейлист!');
+                } else if (videoId) {
+                    ytPlayer.loadVideoById(videoId);
+                    showToast('▶️', 'YouTube', 'Завантажено трек!');
+                }
+                musicToggleBtn.textContent = '⏸';
+                isMusicPlaying = true;
+            }
             
             scLinkInput.value = '';
         });

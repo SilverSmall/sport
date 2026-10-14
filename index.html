@@ -221,9 +221,9 @@
                 <button class="settings-btn" id="customMusicBtn" style="font-size: 0.85rem">📂 Вибрати трек (MP3)</button>
             </div>
             <div class="setting-group" style="margin-top: 0.5rem">
-                <label>SoundCloud Музика (Посилання):</label>
+                <label>YouTube Музика (Посилання):</label>
                 <div style="display: flex; gap: 0.5rem">
-                    <input type="text" id="scLinkInput" placeholder="https://soundcloud.com/..." style="flex: 1; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); color: var(--text-primary);">
+                    <input type="text" id="scLinkInput" placeholder="https://youtube.com/..." style="flex: 1; padding: 0.6rem; border-radius: 8px; border: 1px solid var(--border-subtle); background: var(--bg-card); color: var(--text-primary);">
                     <button class="settings-btn" id="scApplyBtn" style="padding: 0.6rem 1rem">Встановити</button>
                 </div>
             </div>
@@ -331,7 +331,6 @@
             <!-- Source Tabs -->
             <div class="music-source-tabs">
                 <button class="source-tab active" data-source="yt">▶ YouTube</button>
-                <button class="source-tab" data-source="sc">☁ SoundCloud</button>
                 <button class="source-tab" data-source="mp3">📂 MP3</button>
             </div>
 
@@ -354,7 +353,7 @@
 
             <!-- Custom URL -->
             <div class="music-url-row" id="musicUrlRow">
-                <input type="text" id="musicUrlInput" placeholder="Вставте YouTube або SoundCloud посилання...">
+                <input type="text" id="musicUrlInput" placeholder="Вставте YouTube посилання (плейлист або відео)...">
                 <button id="musicUrlApply" title="Застосувати">OK</button>
             </div>
 
@@ -384,17 +383,15 @@
         </div>
     </div>
 
-    <!-- Hidden Players (YouTube + SoundCloud) -->
+    <!-- Hidden Player (YouTube) -->
     <div style="position: fixed; top: -9999px; left: -9999px; width: 200px; height: 200px; opacity: 0.01; pointer-events: none;">
         <div id="yt-player"></div>
-        <iframe id="sc-player" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/playlists/874384918&amp;auto_play=false&amp;hide_related=true&amp;show_comments=false&amp;show_user=false&amp;show_reposts=false&amp;visual=false"></iframe>
     </div>
 
     <!-- Confetti canvas -->
     <canvas id="confettiCanvas"></canvas>
 
     <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="https://w.soundcloud.com/player/api.js" type="text/javascript"></script>
     <!-- Google Firebase SDK (Compat) & Config -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
