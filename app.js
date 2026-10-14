@@ -967,9 +967,13 @@ function signInWithGoogle() {
     provider.addScope('https://www.googleapis.com/auth/youtube.readonly');
 
     firebase.auth().signInWithPopup(provider).then(result => {
-        if (result.credential && result.credential.accessToken) {
-            googleAccessToken = result.credential.accessToken;
-            sessionStorage.setItem('yt_access_token', googleAccessToken);
+        const credential = result.credential || (firebase.auth.GoogleAuthProvider ? firebase.auth.GoogleAuthProvider.credentialFromResult(result) : null);
+        const token = (credential && credential.accessToken) ? credential.accessToken : (result.credential ? result.credential.accessToken : null);
+        
+        if (token) {
+            googleAccessToken = token;
+            sessionStorage.setItem('yt_access_token', token);
+            localStorage.setItem('yt_access_token', token);
             loadUserYouTubePlaylists();
         }
         showToast('👋', 'Ласкаво просимо!', result.user.displayName || 'Успішний вхід');
@@ -985,6 +989,7 @@ function signOutGoogle() {
     if (typeof firebase !== 'undefined' && firebase.auth) {
         firebase.auth().signOut().then(() => {
             sessionStorage.removeItem('yt_access_token');
+            localStorage.removeItem('yt_access_token');
             googleAccessToken = null;
             if (userPlaylistsSection) userPlaylistsSection.style.display = 'none';
             showToast('👋', 'Вихід', 'Ви вийшли з акаунта');
@@ -1037,17 +1042,23 @@ function loadCloudData(uid) {
 
 function loadUserYouTubePlaylists() {
     if (!googleAccessToken) {
-        googleAccessToken = sessionStorage.getItem('yt_access_token');
+        googleAccessToken = sessionStorage.getItem('yt_access_token') || localStorage.getItem('yt_access_token');
     }
     if (!googleAccessToken) return;
 
-    fetch('https://www.googleapis.com/youtube/v3/playlists?part=snippet&mine=true&maxResults=20', {
+    fetch('https://www.googleapis.com/youtube/v3/playlists?part=snippet&mine=true&maxResults=50', {
         headers: {
             'Authorization': 'Bearer ' + googleAccessToken
         }
     }).then(res => res.json()).then(data => {
         if (data.items && data.items.length) {
             renderUserPlaylists(data.items);
+            showToast('🎧', 'YouTube Music', `Завантажено ${data.items.length} ваших плейлистів!`);
+        } else if (data.error) {
+            console.warn('YouTube API Response:', data.error);
+            if (data.error.code === 403 && data.error.message && data.error.message.includes('YouTube Data API v3')) {
+                showToast('⚠️', 'YouTube API', 'Потрібно увімкнути YouTube Data API v3 в Google Cloud Console');
+            }
         }
     }).catch(err => console.log('YouTube playlists fetch error:', err));
 }
